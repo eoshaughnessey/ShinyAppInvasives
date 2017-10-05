@@ -1,0 +1,74 @@
+##Some parts are messy. I'm trying to figure out how to do the dropdown to do Taxa (Crayfish, Mollusks, Macrophyte). Then from there get another dropdown of species within each taxa
+
+
+
+library(shiny)
+library(readxl)
+library(data.table)
+library(sf)
+library(rgdal)
+library(dplyr)
+library(datasets)
+library(ggplot2)
+
+# Application title
+titlePanel("Non-Native Species Locations")
+taxa <- c('Crayfish','Plants')
+species <- read.csv('Species.csv', na.strings = '', stringsAsFactors = FALSE)
+)
+
+
+# User Interface
+in1 <- selectInput(inputId = 'pick_taxa',
+                   label = 'Pick a Taxa',
+                   choices = unique(species[['id']]))
+side <- sidebarPanel('Options', in1, in2)
+out2 <- plotOutput('species_plot')
+main <- mainPanel(out2)
+tab <- tabPanel(title = 'Species',
+                sidebarLayout(side, main))
+ui <- navbarPage('Portal Project', tab)
+
+
+#outmap for taxa 
+output$cntymap <-renderLeaflet({
+  leaflet(cnty)%>%
+    addProviderTiles('Esri.WorldImagery', group='Esri')%>% 
+    addProviderTiles('Stamen.TonerLite', group='Stamen')%>% 
+    addLayersControl(baseGroups=c('Esri','Stamen'))%>%
+    addProviderTiles(providers$Stamen.TonerLite,
+                     options = providerTileOptions(noWrap = TRUE)
+    ) %>% 
+    addPolygons()%>%
+    addCircles(
+      data = filteredData(), 
+      #     data = grp1[grp1$group_ == "Fishes",],
+      radius = ~count, 
+      lat = ~Latitude, 
+      lng = ~Longitude,
+      col='red'
+    )
+}) 
+
+#output map for species...something is wrong with the coordinate system
+output$cntymap_sp <-renderLeaflet({
+  leaflet(cnty)%>%
+    addProviderTiles('Esri.WorldImagery', group='Esri')%>% 
+    addProviderTiles('Stamen.TonerLite', group='Stamen')%>% 
+    addLayersControl(baseGroups=c('Esri','Stamen'))%>%
+    addProviderTiles(providers$Stamen.TonerLite,
+                     options = providerTileOptions(noWrap = TRUE)
+    ) %>% 
+    addPolygons()%>%
+    addCircles(
+      data = filteredData_sp(), 
+      #     data = grp1[grp2$gen_sp == "Fishes",],
+      radius = ~count, 
+      lat = ~Latitude, 
+      lng = ~Longitude,
+      col='yellow'
+    )
+}) 
+
+
+shinyApp(ui = ui, server = server)
